@@ -1,7 +1,9 @@
 # Krateo Composable FinOps Database Handler
 This service offers a set of endpoints to connect to the Krateo's CrateDB instance and use notebooks to compute data starting from SQL queries.
 
-This service requires [CrateDB](https://github.com/crate/) to be installed in the Kubernetes cluster.
+This service requires [CrateDB](https://github.com/crate/) to be installed in the Kubernetes cluster. The CrateDB Kubernetes operator is recommended.
+
+For an in-depth look at the architecture and how to configure all the components, download the summary document [here](https://github.com/krateoplatformops/finops-operator-exporter/resources/Krateo_Composable_FinOps___Full.pdf).
 
 ## Summary
 
@@ -57,4 +59,4 @@ helm repo update krateo
 helm install finops-database-handler krateo/finops-database-handler
 ```
 
-You need to configure the environment variables in the HELM chart of the webservice to connect to the database on the HTTP endpoint of CrateDB: `CRATE_HOST` and `CRATE_PORT`.
+You need to configure the environment variables `CRATE_HOST` and `CRATE_PORT` in the HELM chart of the webservice to connect to the database on the HTTP endpoint of CrateDB.
