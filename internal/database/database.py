@@ -38,27 +38,26 @@ class db:
         
         # Get columns from the first record
         columns = list(data[0]['labels'].keys())
+        column_names = ','.join(columns)
+        marks_str = ','.join(['?' for _ in columns])
+        values = []
+        for row in data:
+            record = row["labels"]
+            values.append([record[column] for column in columns])
+            # Prepare the INSERT statement
         try:
-            for row in data:
-                record = row["labels"]
-
-                # Prepare the INSERT statement
-                values = [record[column] for column in columns]
-                column_names = ','.join(columns)
-                query = f"INSERT INTO {table_name} ({column_names}) VALUES ({str(values)[1:-1]}) ON CONFLICT DO NOTHING"
-                
-                # Execute insert
-                self.app.logger.debug('\n\n' + query + '\n\n')
-                cursor.execute(query)
-        
-            return len(data)
-        
+            query = f"INSERT INTO {table_name} ({column_names}) VALUES ({marks_str}) ON CONFLICT DO NOTHING"
+            #str(marks)[1:-1]
+            # Execute insert
+            self.app.logger.debug('\n\n' + query + '\n\n')
+            cursor.executemany(query, values)
         except Exception as e:
             self.app.logger.error(f"Bulk insert failed: {str(e)}")
             cursor.close()
             raise
         finally:
             cursor.close()
+            return len(data)
 
     def insert_notebook(self, table_name : str, notebook_name : str, notebook : str, username : str, password : str) -> bool:
         self.get_db_connection(username, password)
