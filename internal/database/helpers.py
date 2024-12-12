@@ -1,3 +1,24 @@
+
+# Go From this
+# 'CostCenter': '1234'; 'org': 'trey';
+# To JSON
+# [{"key": "CostCenter", "value": "1234"}, {"key": "org", "value": "trey"}]
+def format_tags_for_db(data : str, logger) -> str:
+    splitted = str.split(data, ';')
+    output = []
+    if len(splitted) > 0:
+        for split in splitted:
+            partial = '{'
+            values = str.split(split, ':')
+            if len(values) == 2:
+                partial += '"key": "' + values[0] + '", "value": "' + values[1] + '"'
+            else:
+                partial += '"key": "", "value": ""'
+            partial += '}'
+            output.append(partial)
+    logger.debug(output)
+    return output
+
 def get_focus_create() -> str:
     return '''
 AvailabilityZone STRING,
@@ -49,10 +70,9 @@ SkuPriceDetails STRING,
 SkuPriceId STRING,
 SubAccountId STRING,
 SubAccountName STRING,
-Tags STRING,
+Tags ARRAY(OBJECT AS (key STRING, value STRING)),
 PRIMARY KEY (ResourceId, ResourceName, BillingPeriodEnd, BillingPeriodStart, ChargePeriodEnd, ChargePeriodStart)
 '''
-
 
 def get_notebook_create() -> str:
     return '''

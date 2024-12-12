@@ -9,7 +9,7 @@ import traceback
 
 from flask import Flask, request, jsonify
 from waitress import serve
-from internal.database.helpers import get_focus_create, get_resource_create
+from internal.database.helpers import get_focus_create, get_resource_create, format_tags_for_db
 
 """ Error strings for the webservice """
 url_IncorrectError = 'URL composition incorrect'
@@ -61,14 +61,19 @@ def upload_data():
         if not data:
             return jsonify({'result': 'No data to process'}), 200
         
-
         if not db.does_table_exist(table_name, username, password):
             if metric_type == 'cost':
                 db.create_table(table_name, username, password, get_focus_create)
             elif metric_type == 'resource':
                 db.create_table(table_name, username, password, get_resource_create)
-        
         # Process the bulk insert
+
+        if metric_type == 'cost':
+            # Modify Tags column to match DB format
+            for i in range(len(data)):
+                if 'Tags' in data[i]['labels'].keys():
+                    data[i]['labels']['Tags'] = format_tags_for_db(data[i]['labels']['Tags'], app.logger)
+
         records_inserted = db.bulk_insert(table_name, data, username, password)
         app.logger.info(f"records inserted: {records_inserted}")
         total_time = time.time_ns() / (10 ** 9) - time_start
