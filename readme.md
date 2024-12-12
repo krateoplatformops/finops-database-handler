@@ -51,6 +51,19 @@ Compute endpoint list:
 curl -u <db-user>:<db-password> http://finops-database-handler.finops:8088/compute/list
 ```
 
+### Querying the data
+The Tags in the CSV data read by the exporters need to be in the following format::
+```
+{"CostCenter": "1234","Cost department": "Marketing","env": "prod","org": "trey","Project": "Foo"}
+```
+If this formatting is not used, the finops-database-handler will not insert the data into the database.
+To query the data using the information present inside the tags, you can use a query like this:
+```sql
+SELECT resourceid, tags['value']
+FROM "doc"."focus_table"
+WHERE 'CostAllocationTest' like any(tags['key']) or 'Sameer' like any(tags['value'])
+```
+
 ## Installation
 The webservice can be installed through the [HELM chart](https://github.com/krateoplatformops/finops-database-handler-chart):
 ```sh
