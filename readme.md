@@ -14,7 +14,11 @@ For an in-depth look at the architecture and how to configure all the components
 5. [Installation](#Installation)
 
 ## Overview
-This webservice acts as a proxy for all requests to the database, including the possibility of performing computations on the stored data. The structure is: the database requires username/password authentication for the HTTP endpoint. The password is stored in a Kubernetes secret. The RBAC to the secret should allow to filter who can access the webservice-database functionality. The handler calls the database HTTP endpoint to perform queries (both input and output). The result is returned by the endpoint.
+This webservice acts as a proxy for all requests to the database, including the possibility of performing computations on the stored data. 
+The structure is: the database requires username/password authentication for the HTTP endpoint. The password is stored in a Kubernetes secret. 
+The RBAC to the secret should allow to filter who can access the webservice-database functionality. 
+The handler calls the database HTTP endpoint to perform queries (both input and output). 
+The result is returned by the endpoint.
 
 ## Architecture
 ![Krateo Composable FinOps Database Handler](_diagrams/architecture.png)
@@ -28,6 +32,7 @@ All endpoints must have the basic auth header field compiled with the username a
 - GET `/compute/list`: lists all available compute notebooks
 
 ## Examples
+### API
 Upload endpoint:
 ```
 curl -X POST -u <db-user>:<db-password> http://finops-database-handler.finops:8088/upload?table=<table_name>&type=<cost|resource> -d "<metrics>"
@@ -50,6 +55,46 @@ Compute endpoint list:
 ```
 curl -u <db-user>:<db-password> http://finops-database-handler.finops:8088/compute/list
 ```
+### Notebooks
+The notebooks are an agnostic and standalone component. They can be used to integrate additional action on the database, including API endpoint for data outout. See the folder `notebook_sample` for examples.
+
+The code of each notebook is injected with the authentication information to CrateDB:
+```python
+import sys
+from crate import client
+def eprint(*args, **kwargs):
+    print(*args, file=sys.stderr, **kwargs)
+host = sys.argv[1]
+port = sys.argv[2]
+username = sys.argv[3]
+password = sys.argv[4]
+try:
+    connection = client.connect(f"http://{host}:{port}", username=username, password=password)
+    cursor = connection.cursor()
+except Exception as e:
+    eprint('error while connecting to database' + str(e))
+    raise
+```
+Additionally, you have to conclude the execution of your code by closing the connection and cursor:
+```python
+cursor.close()
+connection.close()
+```
+
+To install additional dependencies inside your notebooks, you need to launch pip at runtime. For example:
+```python
+import pip._internal as pip
+def install(package):
+    pip.main(['install', package])
+...
+if __name__ == "__main__":
+    try:
+        import requests
+    except ImportError:
+        install('requests')
+        import requests
+    ...
+```
 
 ### Querying the data
 The Tags in the CSV data read by the exporters need to be in the following format::
@@ -59,9 +104,9 @@ The Tags in the CSV data read by the exporters need to be in the following forma
 If this formatting is not used, the finops-database-handler will not insert the data into the database.
 To query the data using the information present inside the tags, you can use a query like this:
 ```sql
-SELECT resourceid, tags['value']
+SELECT resourceid
 FROM "doc"."focus_table"
-WHERE 'CostAllocationTest' like any(tags['key']) or 'Sameer' like any(tags['value'])
+WHERE tags['org'] = 'test'
 ```
 
 ## Installation

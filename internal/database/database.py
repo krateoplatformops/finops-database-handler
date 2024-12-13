@@ -27,7 +27,7 @@ class db:
                 self.app.logger.error(f"Failed to connect to CrateDB: {str(e)}")
                 raise
 
-    def bulk_insert(self, table_name : str, data : list, username : str, password : str) -> int:
+    def bulk_insert(self, table_name : str, data : list, username : str, password : str) -> tuple[int, str]:
         """Perform bulk insert into specified CrateDB table"""
         self.get_db_connection(username, password)
         cursor = self.connection.cursor()
@@ -50,14 +50,23 @@ class db:
             #str(marks)[1:-1]
             # Execute insert
             self.app.logger.debug('\n\n' + query + '\n\n')
-            cursor.executemany(query, values)
+            result = cursor.executemany(query, values)
+            rows_inserted = 0
+            error_executemany = ''
+            for dictionary in result:
+                if 'rowcount' in dictionary.keys() and dictionary['rowcount'] != -2:
+                    rows_inserted += dictionary['rowcount']
+                elif 'error_message' in dictionary.keys():
+                    self.app.logger.error(dictionary['error_message'])
+                    if error_executemany != '':
+                        error_executemany = dictionary['error_message']
         except Exception as e:
             self.app.logger.error(f"Bulk insert failed: {str(e)}")
             cursor.close()
             raise
         finally:
             cursor.close()
-            return len(data)
+            return rows_inserted, error_executemany
 
     def insert_notebook(self, table_name : str, notebook_name : str, notebook : str, username : str, password : str) -> bool:
         self.get_db_connection(username, password)

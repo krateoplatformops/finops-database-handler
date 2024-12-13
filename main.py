@@ -74,9 +74,17 @@ def upload_data():
                 if 'Tags' in data[i]['labels'].keys():
                     data[i]['labels']['Tags'] = format_tags_for_db(data[i]['labels']['Tags'], app.logger)
 
-        records_inserted = db.bulk_insert(table_name, data, username, password)
-        app.logger.info(f"records inserted: {records_inserted}")
+        records_inserted, error = db.bulk_insert(table_name, data, username, password)
         total_time = time.time_ns() / (10 ** 9) - time_start
+        app.logger.info(f"records inserted: {records_inserted}")        
+        if error != '' or records_inserted == 0:
+            app.logger.error(error)
+            return jsonify({
+                'message': error,
+                'records_processed': records_inserted,
+                'time_taken': total_time
+            }), 500
+        
         return jsonify({
             'message': 'Data uploaded successfully',
             'records_processed': records_inserted,
