@@ -2,20 +2,23 @@
 # Go From this
 # 'CostCenter': '1234'; 'org': 'trey';
 # To JSON
-# [{"key": "CostCenter", "value": "1234"}, {"key": "org", "value": "trey"}]
+# {"CostCenter": "1234", "org": "trey"}
 def format_tags_for_db(data : str, logger) -> str:
     splitted = str.split(data, ';')
-    output = []
+    arrOfKeys = []
     if len(splitted) > 0:
+        output = '{'
         for split in splitted:
-            partial = '{'
             values = str.split(split, ':')
-            if len(values) == 2:
-                partial += '"key": "' + values[0] + '", "value": "' + values[1] + '"'
-            else:
-                partial += '"key": "", "value": ""'
-            partial += '}'
-            output.append(partial)
+            key = values[0].strip().replace('.', '')
+            if len(values) == 2 and key not in arrOfKeys:
+                output += '"' + key + '":"' + values[1].strip() + '",'
+                arrOfKeys.append(key)
+        if len(output) > 1:
+            output = output[:-1] # remove final ','
+        output += '}'
+    else:
+        output = '{}'
     logger.debug(output)
     return output
 
@@ -70,7 +73,7 @@ SkuPriceDetails STRING,
 SkuPriceId STRING,
 SubAccountId STRING,
 SubAccountName STRING,
-Tags ARRAY(OBJECT AS (key STRING, value STRING)),
+Tags OBJECT(DYNAMIC),
 PRIMARY KEY (ResourceId, ResourceName, BillingPeriodEnd, BillingPeriodStart, ChargePeriodEnd, ChargePeriodStart)
 '''
 
