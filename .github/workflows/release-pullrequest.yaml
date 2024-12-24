@@ -7,72 +7,74 @@ on:
 
 env:
   REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  package-amd64:
-    runs-on: buildjet-2vcpu-ubuntu-2204
+  build-and-push:
+    name: Build and Push
+    strategy:
+      matrix:
+        runner: [buildjet-2vcpu-ubuntu-2204-arm, buildjet-2vcpu-ubuntu-2204]
+        include:
+          - runner: buildjet-2vcpu-ubuntu-2204-arm
+            platform: linux/arm64
+          - runner: buildjet-2vcpu-ubuntu-2204
+            platform: linux/amd64
+    runs-on: ${{ matrix.runner }}
+    
     permissions:
-      packages: write
       contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          # Create a new builder instance
+          install: true
+          driver-opts: |
+            image=moby/buildkit:latest
+          buildkitd-flags: --debug
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: ${{ matrix.platform }}
+          push: false
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+  test:
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-
-      - name: Docker meta
-        id: meta
-        uses: docker/metadata-action@v4
+      - name: Set up Python 3.12.3
+        uses: actions/setup-python@v4
         with:
-          images: ${{ env.REGISTRY }}/${{ github.repository }}
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
-      - name: Login to CR
-        uses: docker/login-action@v2
+          python-version: '3.12.3'
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Run tests and collect coverage
+        run: pytest --cov
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
         with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build docker image and push
-        id: docker_build_amd64
-        uses: docker/build-push-action@v4
-        with:
-          push: false
-          platforms: linux/amd64
-          labels: ${{ steps.meta.outputs.labels }}
-          outputs: type=image,name=${{ env.REGISTRY }}/${{ github.repository }},push-by-digest=true,name-canonical=true,push=true
-
-  package-arm64:
-    runs-on: buildjet-2vcpu-ubuntu-2204-arm
-    permissions:
-      packages: write
-      contents: read
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: Docker meta
-        id: meta
-        uses: docker/metadata-action@v4
-        with:
-          images: ${{ env.REGISTRY }}/${{ github.repository }}
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
-      - name: Login to CR
-        uses: docker/login-action@v2
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build docker image and push
-        id: docker_build_arm64
-        uses: docker/build-push-action@v4
-        with:
-          push: false
-          platforms: linux/arm64
-          labels: ${{ steps.meta.outputs.labels }}
-          outputs: type=image,name=${{ env.REGISTRY }}/${{ github.repository }},push-by-digest=true,name-canonical=true,push=true
+          token: ${{ secrets.CODECOV_TOKEN }}
