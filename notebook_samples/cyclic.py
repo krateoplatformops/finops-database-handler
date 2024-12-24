@@ -17,6 +17,11 @@
 import pandas as pd
 import numpy as np
 
+# import additional package
+import pip._internal as pip
+def install(package):
+    pip.main(['install', package])
+
 # Global variables
 json_template = {'resourceId': '', 'optimization': None}
 json_template_optimization = {'resourceName':'', 'resourceDelta':0, 'typeChange':None}
@@ -36,9 +41,12 @@ def compute(df: pd.DataFrame, resource_id: str, metric_name: str):
     json_template_type_change['to'] = str(window_low_utilization[1] + window_low_utilization[2]) + ':00'
     json_template_optimization['resourceName'] = metric_name
     json_template_optimization['resourceDelta'] = -window_low_utilization[0]
-    json_template_optimization['typeChange'] = json_template_type_change.copy()  # Added .copy()
+    json_template_optimization['typeChange'] = json_template_type_change.copy()
     json_template['resourceId'] = resource_id
-    json_template['optimization'] = json_template_optimization.copy()  # Added .copy()
+    json_template['optimization'] = json_template_optimization.copy() 
+    
+    url = 'http://finops-http-rest-queue-service.finops:8080/upload?topic=optimizations'
+    _ = requests.post(url, json=json_template)
 
     print(json_template)
 
@@ -124,8 +132,11 @@ def main():
         resource_query = f"SELECT DISTINCT ResourceId FROM {table_name}"
         cursor.execute(resource_query)
         resource_ids = pd.DataFrame(cursor.fetchall(), columns=['ResourceId'])
-
+        i = 0
         for resource_id in resource_ids['ResourceId']:
+            if i != 0:
+                pass
+            i += 1
             metric_query = ("SELECT DISTINCT metricName\n"
                 f"FROM {table_name}\n"
                 "WHERE ResourceId = ?"
@@ -161,4 +172,9 @@ def main():
         connection.close()
 
 if __name__ == "__main__":
+    try:
+        import requests
+    except ImportError:
+        install('requests')
+        import requests
     main()
