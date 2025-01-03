@@ -26,10 +26,17 @@ The result is returned by the endpoint.
 ## API
 All endpoints must have the basic auth header field compiled with the username and password of the database.
 
-- POST `/upload`: the webservice receives the data (divided into chunks) and directly uploads it into the specified table in the database
-- POST `/compute/<compute_name>`: calls the specified compute notebook with the POST body data being the parameters required by the given algorithm, encoded in JSON as parameter_name=parameter_value
-- POST `/compute/<compute_name>/upload`: uploads the specified notebook into the database with the name <compute_name>
-- GET `/compute/list`: lists all available compute notebooks
+- POST    `/upload`: the webservice receives the data (divided into chunks) and directly uploads it into the specified table in the database
+- POST    `/compute/<compute_name>`: calls the specified compute notebook with the POST body data being the parameters required by the given algorithm, encoded in JSON as parameter_name=parameter_value
+- POST    `/compute/<compute_name>/upload?overwrite=[true|false]`: uploads the specified notebook into the database with the name <compute_name>, with overwriting if configured (if not, defaults to no overwrite)
+- DELETE  `/compute/<compute_name>`: deletes the specified notebook from the database
+- GET     `/compute/list`: lists all available compute notebooks
+
+The response of each endpoint will be in the format:
+```json
+{"result":"<result message>"}
+```
+except for the compute endpoint, which does not have a pre-defined format. This allows the output to be completely customized to the necessities of the application.
 
 ## Examples
 ### API
@@ -47,16 +54,22 @@ curl -X POST -u <db-user>:<db-password> http://finops-database-handler.finops:80
 
 Compute endpoint upload:
 ```
-curl -X POST -u <db-user>:<db-password> http://finops-database-handler.finops:8088/compute/cyclic/upload --data-binary "@cyclic.py"
+curl -X POST -u <db-user>:<db-password> http://finops-database-handler.finops:8088/compute/cyclic/upload?overwrite=false --data-binary "@cyclic.py"
 ```
-For a notebook example, see `./notebook_samples/cyclic.py`
+For notebook examples, see `./notebook_samples/cyclic.py` or `./notebook_samples/query.py`
 
 Compute endpoint list:
 ```
 curl -u <db-user>:<db-password> http://finops-database-handler.finops:8088/compute/list
 ```
+
+Compute endpoit delete:
+```
+curl -X DELETE -u <db-user>:<db-password> http://finops-database-handler.finops:8088/compute/cyclic
+```
+
 ### Notebooks
-The notebooks are an agnostic and standalone component. They can be used to integrate additional action on the database, including API endpoint for data outout. See the folder `notebook_sample` for examples.
+The notebooks are an agnostic and standalone component. They can be used to integrate additional actions in the database, including an API endpoint for data output. See the folder `notebook_sample` for examples.
 
 The code of each notebook is injected with the authentication information to CrateDB:
 ```python
