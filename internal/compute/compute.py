@@ -38,10 +38,12 @@ def run(notebook : str, db : cratedb.db, username : str, password : str, paramet
     return result.stdout.strip('\n')
 
 
-def upload(db : cratedb.db, notebook_name : str, notebook : str, username : str, password : str) -> bool:
+def upload(db : cratedb.db, notebook_name : str, notebook : str, overwrite: bool, username : str, password : str) -> bool:
     if not db.does_table_exist(NOTEBOOK_TABLE, username, password):
         db.create_table(NOTEBOOK_TABLE, username, password, get_notebook_create)
     
-    return db.insert_notebook(NOTEBOOK_TABLE, notebook_name, notebook, username, password)
+    return db.insert_notebook(NOTEBOOK_TABLE, notebook_name, notebook, overwrite, username, password)
 
+def delete(db : cratedb.db, notebook_name : str, username : str, password : str) -> bool:
+    return db.delete_notebook(NOTEBOOK_TABLE, notebook_name, username, password)
 
