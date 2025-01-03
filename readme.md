@@ -34,7 +34,7 @@ All endpoints must have the basic auth header field compiled with the username a
 
 The response of each endpoint will be in the format:
 ```json
-{"result":"<result message>"}
+{"result":<result message>}
 ```
 except for the compute endpoint, which does not have a pre-defined format. This allows the output to be completely customized to the necessities of the application.
 
