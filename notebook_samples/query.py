@@ -14,6 +14,10 @@
 #     eprint('error while connecting to database' + str(e))
 #     raise
 
+import pip._internal as pip
+def install(package):
+    pip.main(['install', package])
+
 def main():   
     table_name_arg = sys.argv[5]
     table_name_key_value = str.split(table_name_arg, '=')
@@ -31,4 +35,9 @@ def main():
 
 
 if __name__ == "__main__":
+    try:
+        import pandas as pd
+    except ImportError:
+        install('pandas')
+        import pandas as pd
     main()

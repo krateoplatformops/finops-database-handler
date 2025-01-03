@@ -100,7 +100,7 @@ def home():
     return 'This is the homepage of Krateo\'s CrateDB Webservice: you can reach the service!'
 
 @app.route('/compute', defaults={'path': ''})
-@app.route('/compute/<path:path>', methods=['GET', 'POST'])
+@app.route('/compute/<path:path>', methods=['GET', 'POST', 'DELETE'])
 def compute(path : str):
     app.logger.debug(request.method + ' request on ' + path)
 
@@ -129,15 +129,24 @@ def compute(path : str):
 
         
     elif request.method == 'POST':
-        if len(path.split('/')) == 1:
-            parameters = request.get_json()
-            return jsonify({'result': compute_notebook.run(path, db, username, password, parameters, engine='cratedb')}), 200
-
         parts = path.split('/')
+
+        if len(parts) == 1:
+            parameters = request.get_json()
+            return compute_notebook.run(path, db, username, password, parameters, engine='cratedb')
+
         if len(parts) == 2:
             if parts[1] == 'upload':
                 notebook = request.get_data().decode()
-                return jsonify({'result': compute_notebook.upload(db, parts[0], notebook, username, password)}), 200
+                if request.args.get('overwrite') is not None:
+                    app.logger.debug('Overwrite from query string ' + request.args.get('overwrite'))
+                    overwrite = request.args.get('overwrite') == ('true' or 'True')
+                else:
+                    overwrite = False
+                return jsonify({'result': compute_notebook.upload(db, parts[0], notebook, overwrite, username, password)}), 200
+            
+    elif request.method == 'DELETE':
+        return jsonify({'result': compute_notebook.delete(db, path, username, password)}), 200
         
     return jsonify({'error': url_Method_IncorrectError}), 405
 

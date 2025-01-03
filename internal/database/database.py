@@ -68,14 +68,27 @@ class db:
             cursor.close()
             return rows_inserted, error_executemany
 
-    def insert_notebook(self, table_name : str, notebook_name : str, notebook : str, username : str, password : str) -> bool:
+    def insert_notebook(self, table_name : str, notebook_name : str, notebook : str, overwrite : bool, username : str, password : str) -> bool:
         self.get_db_connection(username, password)
         cursor = self.connection.cursor()
         if not notebook:
             return False
-        cursor.execute(f"INSERT INTO {table_name} (NOTEBOOK_NAME,DATA) VALUES (?,?) ON CONFLICT DO NOTHING", [notebook_name, notebook])
+        self.app.logger.info('Overwrite of ' + notebook_name + ' set to ' + str(overwrite))
+        if overwrite:
+            cursor.execute(f"INSERT INTO {table_name} (NOTEBOOK_NAME,DATA) VALUES (?,?) ON CONFLICT (NOTEBOOK_NAME) DO UPDATE SET DATA = excluded.DATA;", [notebook_name, notebook])
+        else:
+            cursor.execute(f"INSERT INTO {table_name} (NOTEBOOK_NAME,DATA) VALUES (?,?) ON CONFLICT DO NOTHING", [notebook_name, notebook])
         cursor.close()
 
+        return True
+    
+    def delete_notebook(self, table_name : str, notebook_name : str, username : str, password : str) -> bool:
+        self.get_db_connection(username, password)
+        cursor = self.connection.cursor()
+
+        cursor.execute(f"DELETE FROM {table_name} WHERE NOTEBOOK_NAME = '{notebook_name}'")
+
+        cursor.close()
         return True
     
     def get_notebook(self, table_name : str, notebook : str, username : str, password : str) -> str:
