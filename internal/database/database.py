@@ -97,7 +97,7 @@ class db:
 
         cursor.execute(f"SELECT DATA FROM {table_name} WHERE NOTEBOOK_NAME = '{notebook}' LIMIT 1")
         records = cursor.fetchall()
-        self.app.logger.info(records[0][0])
+        self.app.logger.debug(records[0][0])
         return records[0][0]
 
     def list_notebooks(self, table_name : str, username : str, password : str) -> str:
@@ -126,7 +126,7 @@ class db:
         cursor = self.connection.cursor()
       
         try: 
-            cursor.execute(f"CREATE TABLE {table_name} ({column_list_fun()}) WITH (column_policy = 'dynamic')")
+            cursor.execute(f"CREATE TABLE IF NOT EXISTS {table_name} ({column_list_fun()}) WITH (column_policy = 'dynamic')")
         except Exception as e:
             self.app.logger.error(f"Could not create table: {str(e)}")
         finally:
