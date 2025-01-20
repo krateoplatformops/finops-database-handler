@@ -11,6 +11,7 @@ def list(db : cratedb.db, username : str, password : str) -> list:
     
 
 def run(notebook : str, db : cratedb.db, username : str, password : str, parameters : list, engine : str) -> str:
+    db.get_db_connection(username, password)
     data = db.get_db_connection_info()
     if not data[0]:
         return 'no connection info for database'

@@ -7,7 +7,7 @@ import internal.compute.compute as compute_notebook
 
 import traceback
 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response
 from waitress import serve
 from internal.database.helpers import get_focus_create, get_resource_create, format_tags_for_db
 
@@ -27,7 +27,6 @@ def upload_data():
     app.logger.debug(request.method + ' request on /upload')
 
     time_start = time.time_ns() / (10 ** 9)
-    """Handle data upload requests"""
     try:
         if request.authorization.type == 'basic':
             username = request.authorization.get('username')
@@ -133,7 +132,12 @@ def compute(path : str):
 
         if len(parts) == 1:
             parameters = request.get_json()
-            return compute_notebook.run(path, db, username, password, parameters, engine='cratedb')
+            result = compute_notebook.run(path, db, username, password, parameters, engine='cratedb')
+            app.logger.info('notebook call to ' + path + ' has result: ' + result)
+            if request.headers.get('Accept') == 'application/json':
+                return Response(result, mimetype='application/json')
+            else:
+                return result, 200
 
         if len(parts) == 2:
             if parts[1] == 'upload':
