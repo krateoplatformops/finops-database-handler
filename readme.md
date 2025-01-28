@@ -24,7 +24,7 @@ The result is returned by the endpoint.
 ![Krateo Composable FinOps Database Handler](_diagrams/architecture.png)
 
 ## API
-All endpoints must have the basic auth header field compiled with the username and password of the database.
+All endpoints must have the basic auth header field compiled with the username and password of the database. The password can also be a base64 encoded string. Note: if you pass a base64 string you will find a warning in the log that notifies a failed connection attempt: this is expected.
 
 - POST    `/upload`: the webservice receives the data (divided into chunks) and directly uploads it into the specified table in the database
 - POST    `/compute/<compute_name>`: calls the specified compute notebook with the POST body data being the parameters required by the given algorithm, encoded in JSON as parameter_name=parameter_value
