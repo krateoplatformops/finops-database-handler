@@ -26,12 +26,22 @@ class db:
                 return # stops the decoding attempt
             except Exception as e:
                 self.app.logger.warning(f"Failed to connect to CrateDB: {str(e)}")
+            
+            self.app.logger.info('Trying base64 decode of credentials...')
+            import base64
+            try:    
+                self.username = base64.b64decode(username, validate=True).decode('utf-8')
+            except Exception as e:
+                self.app.logger.info('username is not base64, continuing...')
+                self.username = username
 
+            try:    
+                self.password = base64.b64decode(password, validate=True).decode('utf-8')
+            except Exception as e:
+                self.app.logger.info('password is not base64, continuing...')
+                self.username = username
+            
             try:
-                self.app.logger.warning('Trying base64 decode of credentials...')
-                import base64
-                self.username = base64.b64decode(username).decode('utf-8')
-                self.password = base64.b64decode(password).decode('utf-8')
                 self.connection = client.connect(f"http://{self.host}:{self.port}", username=self.username, password=self.password)
             except Exception as e:
                 self.app.logger.error(f"Failed to connect to CrateDB: {str(e)}")
