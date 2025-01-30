@@ -1,13 +1,14 @@
+import os
+import validators
+
 from crate import client
 from typing import Callable
 
 FOCUS_PRIMARY_KEYS = ['ResourceId', 'BillingPeriodStart', 'BillingPeriodEnd', 'ChargePeriodStart', 'ChargePeriodEnd']
 
 class db:
-    def __init__(self, app, host : str, port : int):
+    def __init__(self, app):
         self.app = app
-        self.host = host
-        self.port = port
         self.connection = None
 
     def get_db_connection_info(self) -> tuple[str, str, str, str]:
@@ -17,13 +18,21 @@ class db:
             return (False, '', '', '', '')
 
     def get_db_connection(self, username : str, password : str):
-        """Create and return a connection to CrateDB"""
         if self.connection == None:
+            self.host = os.getenv('CRATE_HOST')
+            self.port = int(os.getenv('CRATE_PORT'))
+
+            self.app.logger.info(f"Connecting to CrateDB on http://{self.host}:{self.port}")
+
+            if self.host == '' or not validators.url(f"http://{self.host}:{self.port}"):
+                self.app.logger.error('No host for CrateDB, invalid url')
+                return
+
             self.username = username
             self.password = password
             try:
                 self.connection = client.connect(f"http://{self.host}:{self.port}", username=self.username, password=self.password)
-                return # stops the decoding attempt
+                return # stops the decoding attempt of username/password if the connection is successful
             except Exception as e:
                 self.app.logger.warning(f"Failed to connect to CrateDB: {str(e)}")
             
