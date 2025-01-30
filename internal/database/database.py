@@ -31,7 +31,7 @@ class db:
             self.username = username
             self.password = password
             try:
-                self.connection = client.connect(f"http://{self.host}:{self.port}", username=self.username, password=self.password)
+                self.connection = client.connect(f"http://{self.host}:{self.port}", username=self.username, password=self.password, backoff_factor=6)
                 return # stops the decoding attempt of username/password if the connection is successful
             except Exception as e:
                 self.app.logger.warning(f"Failed to connect to CrateDB: {str(e)}")
@@ -51,7 +51,7 @@ class db:
                 self.username = username
             
             try:
-                self.connection = client.connect(f"http://{self.host}:{self.port}", username=self.username, password=self.password)
+                self.connection = client.connect(f"http://{self.host}:{self.port}", username=self.username, password=self.password, backoff_factor=6)
             except Exception as e:
                 self.app.logger.error(f"Failed to connect to CrateDB: {str(e)}")
                 raise
