@@ -17,10 +17,8 @@ url_Method_IncorrectError = 'URL composition or methods are incorrect'
 
 """ Service initialization """
 app = Flask(__name__)
-# CrateDB connection configuration
-CRATE_HOST = os.getenv('CRATE_HOST', 'cratedb-cluster.finops')
-CRATE_PORT = int(os.getenv('CRATE_PORT', '4200'))
-db = cratedb.db(app, CRATE_HOST, CRATE_PORT)
+# CrateDB interface object
+db = cratedb.db(app)
 
 @app.route('/upload', methods=['POST'])
 def upload_data():
