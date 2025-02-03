@@ -20,6 +20,21 @@ app = Flask(__name__)
 # CrateDB interface object
 db = cratedb.db(app)
 
+@app.before_request
+def log_request():
+    # Log basic info about the incoming request
+    app.logger.debug(
+        f"Incoming Request: \n{request.method} {request.url} \n"
+        f"Headers: {dict(request.headers)} \n"
+        f"Body: {request.get_data(as_text=True)} \n"
+    )
+
+@app.after_request
+def log_response(response):
+    # Optionally, log details about the outgoing response
+    app.logger.debug(f"Response: {response.status} for {request.method} {request.url}")
+    return response
+
 @app.route('/upload', methods=['POST'])
 def upload_data():
     app.logger.debug(request.method + ' request on /upload')
@@ -31,6 +46,7 @@ def upload_data():
             password = request.authorization.get('password')
         else:
             app.logger.error("request authorization header is not type basic. Authorization type: " + request.authorization.type)
+            return jsonify({'error': 'authorization header is missing or not type basic'}), 401
 
         # Get table name from request parameters
         app.logger.info('args: ' + str(request.args.to_dict()))
@@ -161,7 +177,7 @@ def handle_error(error):
 
 if __name__ == '__main__':
     # Configure logging
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.DEBUG)
     
     # Start the server using Waitress
     app.logger.info("Starting server on port 8088...")
