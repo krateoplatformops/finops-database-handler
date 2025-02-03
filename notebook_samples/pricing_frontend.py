@@ -35,12 +35,11 @@ def main(pricing_table : str, annotation_table : str, composition_id : str):
         print(json.dumps(result))
                         
     except Exception as e:
-        print(f"Could not insert keys into table: {str(e)}")
+        print("{\"error\": \"could not obtain pricing: "+ str(e) + "\"}")
     finally:
         cursor.close()
 
 if __name__ == "__main__":
-
     args = {'composition_id': '', 'pricing_table': 'pricing_table', 'annotation_table': 'composition_definition_annotations'}
     for i in range(5, len(sys.argv)):
         key_value = sys.argv[i]
@@ -48,8 +47,10 @@ if __name__ == "__main__":
         if key_value_split[0] in args.keys():
             args[key_value_split[0]] = key_value_split[1] if key_value_split[1] else args[key_value_split[0]]
 
+    missing_param = False
     for key in args:
         if args[key] == '':
-            print('missing agument for call: ' + key)
-
-    main(args['pricing_table'], args['annotation_table'], args['composition_id'])
+            print("{\"error\": \"missing agument for call: "+ key + "\"}")
+            missing_param = True
+    if not missing_param:
+        main(args['pricing_table'], args['annotation_table'], args['composition_id'])
