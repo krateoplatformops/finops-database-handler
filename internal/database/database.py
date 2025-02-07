@@ -73,14 +73,15 @@ class db:
         for row in data:
             record = row["labels"]
             values.append([record[column] for column in columns])
-            # Prepare the INSERT statement
+
+        rows_inserted = 0
         try:
+            # Prepare the INSERT statement
             query = f"INSERT INTO {table_name} ({column_names}) VALUES ({marks_str}) ON CONFLICT DO NOTHING"
-            #str(marks)[1:-1]
+
             # Execute insert
             self.app.logger.debug('\n\n' + query + '\n\n')
             result = cursor.executemany(query, values)
-            rows_inserted = 0
             error_executemany = ''
             for dictionary in result:
                 if 'rowcount' in dictionary.keys() and dictionary['rowcount'] != -2:
