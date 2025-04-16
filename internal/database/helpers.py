@@ -74,7 +74,7 @@ SkuPriceId STRING,
 SubAccountId STRING,
 SubAccountName STRING,
 Tags OBJECT(DYNAMIC),
-PRIMARY KEY (ResourceId, ResourceName, BillingPeriodEnd, BillingPeriodStart, ChargePeriodEnd, ChargePeriodStart)
+PRIMARY KEY (BilledCost, ResourceId, ResourceName, BillingPeriodEnd, BillingPeriodStart, ChargePeriodEnd, ChargePeriodStart, skupriceid)
 '''
 
 def get_notebook_create() -> str:
