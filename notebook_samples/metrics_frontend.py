@@ -20,34 +20,62 @@ import json
 def install(package):
     pip.main(['install', package])
 
-def main():   
+def main():
     args = {'table_name': '', 'resource_name': '', 'resource_group_name': ''}
     for i in range(5, len(sys.argv)):
         key_value = sys.argv[i]
         key_value_split = str.split(key_value, '=')
         if key_value_split[0] in args.keys():
             args[key_value_split[0]] = key_value_split[1] if key_value_split[1] else args[key_value_split[0]]
-
+    
     for key in args:
         if args[key] == '':
             print('missing agument for call: ' + key)
-
+    
     try:
-        resource_query = f"SELECT * FROM {args['table_name']} WHERE resourceid LIKE '%{args['resource_name']}%' AND resourceid LIKE '%{args['resource_group_name']}%' AND timestamp > CURRENT_TIMESTAMP - INTERVAL '1 week'"
+        resource_query = f"SELECT * FROM {args['table_name']} WHERE resourceid LIKE '%{args['resource_name']}%' AND resourceid LIKE '%{args['resource_group_name']}%'" #AND timestamp > CURRENT_TIMESTAMP - INTERVAL '1 week'"
         cursor.execute(resource_query)
         df = pd.DataFrame(cursor.fetchall(), columns=[col[0] for col in cursor.description])
         df["timestamp"] = pd.to_datetime(df["timestamp"], unit='ms').dt.strftime("%Y-%m-%d %H:%M:%S")
         df = df.sort_values(by="timestamp")
-        json_output = {
-            "xAxisName": "Time",
-            "yAxisName": df["metricname"][0] if len(df["metricname"]) > 0 else "",
-            "legendName": df["metricname"][0] if len(df["metricname"]) > 0 else "",
-            "color": "blue",
-            "data": [{"xValue": row["timestamp"], "yValue": row["average"]} for _, row in df.iterrows()]
-        }
-
-        print(json.dumps(json_output, indent=4))
         
+        # Group data by metricname to create separate lines
+        grouped_df = df.groupby('metricname')
+        
+        # Prepare the new output format
+        lines = []
+        colors = ["blue", "orange", "green", "red", "darkBlue", "gray"]  # Default color rotation
+        
+        for idx, (metric_name, group) in enumerate(grouped_df):
+            # Create data points for this metric
+            data_points = [{"xValue": row["timestamp"], "yValue": row["average"]} for _, row in group.iterrows()]
+            
+            # Convert data points to JSON string
+            data_json_string = json.dumps(data_points)
+            
+            # Add this metric as a line
+            lines.append({
+                "color": colors[idx % len(colors)],  # Rotate through colors
+                "legendName": metric_name,
+                "data": data_json_string
+            })
+        
+        # If no grouped data, add a default empty line
+        if len(lines) == 0:
+            lines.append({
+                "color": "blue",
+                "legendName": "",
+                "data": "[]"
+            })
+        
+        # Create the new output format
+        json_output = {
+            "lines": lines,
+            "xAxisName": "Time",
+            "yAxisName": "Value"
+        }
+        
+        print(json.dumps(json_output, indent=4))
     finally:
         cursor.close()
         connection.close()
