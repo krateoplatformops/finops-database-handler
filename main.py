@@ -55,7 +55,7 @@ def upload_data():
         if not table_name:
             return jsonify({'error': 'Table name not specified'}), 400
         
-        metric_type = request.args.get('type')
+        metric_type = str.lower(request.args.get('type'))
         app.logger.info("data type received: " + metric_type)
         if not metric_type:
             app.logger.warning("metric type not specified, assuming 'cost'")
