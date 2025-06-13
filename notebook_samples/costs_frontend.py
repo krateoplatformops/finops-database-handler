@@ -36,8 +36,8 @@ def main():
         # Use only the required columns: billedcost and resourcetype
         resource_query = (
             f"SELECT sum(billedcost) as billedcost, billingcurrency, resourcetype FROM {args['table_name']} "
-            f"WHERE resourceid LIKE '%{args['resource_name']}%' "
-            f"AND resourceid LIKE '%{args['resource_group_name']}%' "
+            f"WHERE (resourcename LIKE '{args['resource_name']}\_%' OR resourcename LIKE '{args['resource_name']}' ) "
+            f"AND resourceid LIKE '%resourcegroups/{args['resource_group_name']}%' "
             f"GROUP BY resourcetype, billingcurrency"
         )
         cursor.execute(resource_query)
