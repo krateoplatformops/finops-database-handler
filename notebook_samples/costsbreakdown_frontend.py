@@ -22,7 +22,7 @@ def install(package):
     pip.main(['install', package])
 
 def main():       
-    args = {'table_name': '', 'resource_name': '', 'resource_group_name': ''}
+    args = {'table_name': '', 'composition_id': ''}
     for i in range(5, len(sys.argv)):
         key_value = sys.argv[i]
         key_value_split = str.split(key_value, '=')
@@ -34,19 +34,22 @@ def main():
             print('missing argument for call: ' + key)
     
     try:
+        if args['composition_id'] == '%':
+            where_clause = ""
+        else:
+            where_clause = f"WHERE tags['compositionId'] = '{args['composition_id']}' "
+        
         resource_query = (
-            f"SELECT sum(billedcost) as billedcost, billingcurrency, resourcetype, chargeperiodstart FROM {args['table_name']} "
-            f"WHERE (resourcename LIKE '{args['resource_name']}\_%' OR resourcename LIKE '{args['resource_name']}' ) "
-            f"AND resourceid LIKE '%resourcegroups/{args['resource_group_name']}%' "
-            f"GROUP BY resourcetype, billingcurrency, chargeperiodstart"
-        )
+                f"SELECT sum(billedcost) as billedcost, billingcurrency, resourcetype, chargeperiodstart FROM {args['table_name']} "
+                f"{where_clause}"
+                f"GROUP BY resourcetype, billingcurrency, chargeperiodstart"
+            )
         cursor.execute(resource_query)
         df = pd.DataFrame(cursor.fetchall(), columns=[col[0] for col in cursor.description])
         
         resourcetypes_query = (
             f"SELECT distinct resourcetype FROM {args['table_name']} "
-            f"WHERE resourceid LIKE '%{args['resource_name']}%' "
-            f"AND resourceid LIKE '%{args['resource_group_name']}%' "
+            f"{where_clause}"
         )
         cursor.execute(resourcetypes_query)
         df_types = pd.DataFrame(cursor.fetchall(), columns=[col[0] for col in cursor.description])
@@ -58,7 +61,7 @@ def main():
         all_timestamps = sorted(df["chargeperiodstart"].unique())
         
         # Define colors for different resource types
-        colors = ["blue", "orange", "green", "red", "purple", "brown", "pink", "gray", "yellow"]
+        colors = ["blue", "darkBlue", "orange", "gray", "red", "green"]
         
         lines = []
         for i, resourcetype in enumerate(df_types["resourcetype"]):
@@ -77,15 +80,15 @@ def main():
             for timestamp in all_timestamps:
                 cumulative_value += value_dict[timestamp]
                 data_points.append({
-                    "xValue": timestamp.strftime("%Y-%m-%d %H:%M:%S"),
-                    "yValue": cumulative_value
+                    "xAxis": timestamp.strftime("%Y-%m-%d %H:%M:%S"),
+                    "yAxis": cumulative_value
                 })
             
             # Create line object with proper JSON formatting
             line = {
                 "color": colors[i % len(colors)],
-                "legendName": resourcetype,
-                "data": json.dumps(data_points)
+                "name": resourcetype,
+                "coords": data_points
             }
             lines.append(line)
         
