@@ -3,8 +3,6 @@ This service offers a set of endpoints to connect to the Krateo's CrateDB instan
 
 This service requires [CrateDB](https://github.com/crate/) to be installed in the Kubernetes cluster. The CrateDB Kubernetes operator is recommended.
 
-For an in-depth look at the architecture and how to configure all the components, download the summary document [here](https://github.com/krateoplatformops/finops-operator-exporter/resources/Krateo_Composable_FinOps___Full.pdf).
-
 ## Summary
 
 1. [Overview](#overview)
