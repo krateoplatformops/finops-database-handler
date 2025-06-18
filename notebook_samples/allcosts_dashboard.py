@@ -21,7 +21,7 @@ def install(package):
     pip.main(['install', package])
 
 def main():   
-    args = {'table_name': '', 'composition_id': ''}
+    args = {'table_name': '', 'composition_id': '', 'name': '', 'namespace': '', 'opt': ''}
     for i in range(5, len(sys.argv)):
         key_value = sys.argv[i]
         key_value_split = str.split(key_value, '=')
@@ -34,17 +34,10 @@ def main():
 
     try:
         # Use only the required columns: billedcost and resourcetype
-        if args['composition_id'] == '%':
-            where_clause = ""
-            description_string = "Costs"
-        else:
-            where_clause = f"WHERE tags['compositionId'] = '{args['composition_id']}' "
-            description_string = "Composition Costs"
-
         resource_query = (
-            f"SELECT sum(billedcost) as billedcost, billingcurrency, resourcetype FROM {args['table_name']} "
-            f"{where_clause}"
-            f"GROUP BY resourcetype, billingcurrency"
+            f"SELECT sum(billedcost) as billedcost "
+            f"FROM {args['table_name']} "
+            f"WHERE tags['compositionId'] = '{args['composition_id']}' "
         )
         cursor.execute(resource_query)
         # Create dataframe from query results
@@ -53,30 +46,13 @@ def main():
         # Calculate the total billed cost (for title and series.total)
         total_billed_cost = round(df['billedcost'].sum() if not df.empty else 0, 2)
 
-        # Define the rotation of colors
-        colors = ["blue", "darkBlue", "orange", "gray", "red", "green"]
-
-        # Build the data entries: each row maps to a data entry.
-        # The color rotates through the colors list.
-        series_data = [
-            {
-                "color": colors[i % len(colors)],
-                "value": round(row["billedcost"], 2),
-                "label": row["resourcetype"]
-            }
-            for i, (_, row) in enumerate(df.iterrows())
-        ]
-
         # Build final JSON output
         json_output = {
-            "title": str(total_billed_cost) + " " + df["billingcurrency"][0] if len(df["billingcurrency"]) > 0 else "",
-            "description": description_string,
-            "series": [
-                {
-                    "total": total_billed_cost,
-                    "data": series_data
-                }
-            ]
+            "composition_id": args['composition_id'],
+            "billed_cost": total_billed_cost,
+            "name": args['name'],
+            "namespace": args['namespace'],
+            "opt": args['opt'],
         }
 
         print(json.dumps(json_output, indent=4))

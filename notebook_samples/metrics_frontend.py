@@ -44,28 +44,25 @@ def main():
         
         # Prepare the new output format
         lines = []
-        colors = ["blue", "orange", "green", "red", "darkBlue", "gray"]  # Default color rotation
+        colors = ["blue", "darkBlue", "orange", "gray", "red", "green"]  # Default color rotation
         
         for idx, (metric_name, group) in enumerate(grouped_df):
             # Create data points for this metric
-            data_points = [{"xValue": row["timestamp"], "yValue": row["average"]} for _, row in group.iterrows()]
-            
-            # Convert data points to JSON string
-            data_json_string = json.dumps(data_points)
+            data_points = [{"xAxis": row["timestamp"], "yAxis": row["average"]} for _, row in group.iterrows()]
             
             # Add this metric as a line
             lines.append({
                 "color": colors[idx % len(colors)],  # Rotate through colors
-                "legendName": metric_name,
-                "data": data_json_string
+                "name": metric_name,
+                "coords": data_points
             })
         
         # If no grouped data, add a default empty line
         if len(lines) == 0:
             lines.append({
                 "color": "blue",
-                "legendName": "",
-                "data": "[]"
+                "name": "",
+                "coords": "[]"
             })
         
         # Create the new output format
