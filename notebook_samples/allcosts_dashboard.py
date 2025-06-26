@@ -44,7 +44,7 @@ def main():
         df = pd.DataFrame(cursor.fetchall(), columns=[col[0] for col in cursor.description])
         
         # Calculate the total billed cost (for title and series.total)
-        total_billed_cost = round(df['billedcost'].sum() if not df.empty else 0, 2)
+        total_billed_cost = str(round(df['billedcost'].sum() if not df.empty else 0, 2))
 
         # Build final JSON output
         json_output = {

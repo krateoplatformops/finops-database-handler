@@ -61,7 +61,7 @@ def main():
         series_data = [
             {
                 "color": colors[i % len(colors)],
-                "value": round(row["billedcost"], 2),
+                "value": int(round(row["billedcost"], 0)),
                 "label": row["resourcetype"]
             }
             for i, (_, row) in enumerate(df.iterrows())
