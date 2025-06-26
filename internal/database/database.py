@@ -77,7 +77,7 @@ class db:
         rows_inserted = 0
         try:
             # Prepare the INSERT statement
-            query = f"INSERT INTO {table_name} ({column_names}) VALUES ({marks_str}) ON CONFLICT DO NOTHING"
+            query = f"INSERT INTO {table_name} ({column_names}) VALUES ({marks_str}) ON CONFLICT (ResourceId, ResourceName, BillingPeriodEnd, BillingPeriodStart, ChargePeriodEnd, ChargePeriodStart, skupriceid) DO UPDATE SET BilledCost = excluded.BilledCost"
 
             # Execute insert
             self.app.logger.debug('\n\n' + query + '\n\n')

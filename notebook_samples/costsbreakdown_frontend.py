@@ -81,7 +81,7 @@ def main():
                 cumulative_value += value_dict[timestamp]
                 data_points.append({
                     "xAxis": timestamp.strftime("%Y-%m-%d %H:%M:%S"),
-                    "yAxis": cumulative_value
+                    "yAxis": str(cumulative_value)
                 })
             
             # Create line object with proper JSON formatting
