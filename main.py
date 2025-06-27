@@ -87,7 +87,7 @@ def upload_data():
                 if 'Tags' in data[i]['labels'].keys():
                     data[i]['labels']['Tags'] = format_tags_for_db(data[i]['labels']['Tags'], app.logger)
 
-        records_inserted, error = db.bulk_insert(table_name, data, username, password)
+        records_inserted, error = db.bulk_insert(table_name, data, username, password, metric_type)
         total_time = time.time_ns() / (10 ** 9) - time_start
         app.logger.info(f"records inserted: {records_inserted}")        
         if error != '' or records_inserted == 0:

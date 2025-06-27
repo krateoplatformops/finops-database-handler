@@ -4,7 +4,8 @@ import validators
 from crate import client
 from typing import Callable
 
-FOCUS_PRIMARY_KEYS = ['ResourceId', 'BillingPeriodStart', 'BillingPeriodEnd', 'ChargePeriodStart', 'ChargePeriodEnd']
+FOCUS_PRIMARY_KEYS = 'ResourceId, ResourceName, BillingPeriodEnd, BillingPeriodStart, ChargePeriodEnd, ChargePeriodStart, skupriceid'
+RESOURCE_PRIMARY_KEYS = 'ResourceId, MetricName, timestamp'
 
 class db:
     def __init__(self, app):
@@ -56,7 +57,7 @@ class db:
                 self.app.logger.error(f"Failed to connect to CrateDB: {str(e)}")
                 raise
 
-    def bulk_insert(self, table_name : str, data : list, username : str, password : str) -> tuple[int, str]:
+    def bulk_insert(self, table_name : str, data : list, username : str, password : str, metric_type : str) -> tuple[int, str]:
         """Perform bulk insert into specified CrateDB table"""
         self.get_db_connection(username, password)
         cursor = self.connection.cursor()
@@ -77,7 +78,10 @@ class db:
         rows_inserted = 0
         try:
             # Prepare the INSERT statement
-            query = f"INSERT INTO {table_name} ({column_names}) VALUES ({marks_str}) ON CONFLICT (ResourceId, ResourceName, BillingPeriodEnd, BillingPeriodStart, ChargePeriodEnd, ChargePeriodStart, skupriceid) DO UPDATE SET BilledCost = excluded.BilledCost"
+            if metric_type == 'cost':
+                query = f"INSERT INTO {table_name} ({column_names}) VALUES ({marks_str}) ON CONFLICT ({FOCUS_PRIMARY_KEYS}) DO UPDATE SET BilledCost = excluded.BilledCost"
+            elif metric_type == 'resource':
+                query = f"INSERT INTO {table_name} ({column_names}) VALUES ({marks_str}) ON CONFLICT ({RESOURCE_PRIMARY_KEYS}) DO UPDATE SET average = excluded.average"
 
             # Execute insert
             self.app.logger.debug('\n\n' + query + '\n\n')
