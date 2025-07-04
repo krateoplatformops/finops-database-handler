@@ -129,7 +129,12 @@ class db:
         self.get_db_connection(username, password)
         cursor = self.connection.cursor()
 
-        cursor.execute(f"SELECT DATA FROM {table_name} WHERE NOTEBOOK_NAME = '{notebook}' LIMIT 1")
+        try:
+            cursor.execute(f"SELECT DATA FROM {table_name} WHERE NOTEBOOK_NAME = '{notebook}' LIMIT 1")
+        except Exception as e:
+            self.app.logger.error(f"Could not fetch notebook {notebook}: {str(e)}")
+            return ''
+
         records = cursor.fetchall()
         self.app.logger.debug(records[0][0])
         return records[0][0]

@@ -134,7 +134,7 @@ def compute(path : str):
         if len(parts) == 2:
             if parts[1] == 'info':
                 # return algorithm info for parts[0]
-                return jsonify({'result': 'Information for ' + parts[0],}), 200
+                return jsonify({'notebook': parts[0], 'code': compute_notebook.get_notebook(db, parts[0], username, password)}), 200
             else:
                 return jsonify({'error': url_IncorrectError}), 400
         else:
@@ -146,7 +146,7 @@ def compute(path : str):
 
         if len(parts) == 1:
             parameters = request.get_json()
-            result = compute_notebook.run(path, db, username, password, parameters, engine='cratedb')
+            result = compute_notebook.run(db, path, username, password, parameters, engine='cratedb')
             app.logger.info('notebook call to ' + path + ' has result: ' + result)
             if request.headers.get('Accept') == 'application/json':
                 return Response(result, mimetype='application/json')
