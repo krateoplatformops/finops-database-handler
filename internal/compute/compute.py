@@ -8,9 +8,11 @@ NOTEBOOK_TABLE = 'NOTEBOOK_TABLE'
 
 def list(db : cratedb.db, username : str, password : str) -> list:
     return db.list_notebooks(NOTEBOOK_TABLE, username, password)
-    
 
-def run(notebook : str, db : cratedb.db, username : str, password : str, parameters : list, engine : str) -> str:
+def get_notebook(db : cratedb.db, notebook : str, username : str, password : str) -> str:
+    return db.get_notebook(NOTEBOOK_TABLE, notebook, username, password)
+
+def run(db : cratedb.db, notebook : str, username : str, password : str, parameters : list, engine : str) -> str:
     db.get_db_connection(username, password)
     data = db.get_db_connection_info()
     if not data[0]:

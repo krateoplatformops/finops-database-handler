@@ -33,7 +33,7 @@ def main():
             print('missing agument for call: ' + key)
     
     try:
-        resource_query = f"SELECT * FROM {args['table_name']} WHERE resourceid LIKE '%{args['resource_name']}%' AND resourceid LIKE '%{args['resource_group_name']}%' AND timestamp > CURRENT_TIMESTAMP - INTERVAL '1 week'"
+        resource_query = f"SELECT * FROM {args['table_name']} WHERE resourceid LIKE '%{args['resource_name']}%' AND resourceid LIKE '%{args['resource_group_name']}%' AND timestamp > CURRENT_TIMESTAMP - INTERVAL '2 week'"
         cursor.execute(resource_query)
         df = pd.DataFrame(cursor.fetchall(), columns=[col[0] for col in cursor.description])
         df["timestamp"] = pd.to_datetime(df["timestamp"], unit='ms').dt.strftime("%Y-%m-%d %H:%M:%S")
