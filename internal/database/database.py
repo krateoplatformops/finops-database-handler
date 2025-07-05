@@ -143,7 +143,10 @@ class db:
         self.get_db_connection(username, password)
         cursor = self.connection.cursor()
 
-        cursor.execute(f"SELECT NOTEBOOK_NAME FROM {table_name}")
+        try:
+            cursor.execute(f"SELECT NOTEBOOK_NAME FROM {table_name}")
+        except Exception as e:
+            return []
         return cursor.fetchall()
 
     def does_table_exist(self, table_name : str, username : str, password : str) -> bool:
