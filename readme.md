@@ -107,6 +107,8 @@ if __name__ == "__main__":
     ...
 ```
 
+To install notebooks, you can use the dedicated operator and custom resource, see [finops-database-handler-uploader](https://github.com/krateoplatformops/finops-database-handler-uploader).
+
 ### Querying the data
 The Tags in the CSV data read by the exporters need to be in the following format::
 ```
