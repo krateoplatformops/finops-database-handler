@@ -57,25 +57,52 @@ class db:
                 self.app.logger.error(f"Failed to connect to CrateDB: {str(e)}")
                 raise
 
-    def bulk_insert(self, table_name : str, data : list, username : str, password : str, metric_type : str) -> tuple[int, str]:
+    def bulk_insert(self, table_name: str, data: list, username: str, password: str, metric_type: str) -> tuple[int, str]:
         """Perform bulk insert into specified CrateDB table"""
         self.get_db_connection(username, password)
         cursor = self.connection.cursor()
 
         # Assuming data is a list of dictionaries
         if not data:
-            return 0
-        
+            return 0, ""
         # Get columns from the first record
         columns = list(data[0]['labels'].keys())
         column_names = ','.join(columns)
         marks_str = ','.join(['?' for _ in columns])
         values = []
+
+            # Define numeric columns that shouldn't get ''
+        if metric_type == 'cost':
+            numeric_columns = {
+                "PricingQuantity",
+                "BilledCost",
+                "ConsumedQuantity",
+                "ContractedCost",
+                "ContractedUnitPrice",
+                "EffectiveCost",
+                "ListCost",
+                "ListUnitPrice",
+                "CommitmentDiscountQuantity"
+            }
+        elif metric_type == 'resource':
+            numeric_columns = {
+                "average"
+            }
+
         for row in data:
             record = row["labels"]
-            values.append([record[column] for column in columns])
+            cleaned_row = []
+            for column in columns:
+                val = record[column]
+                # Replace empty string with 0.0 if this column is numeric
+                if column in numeric_columns and val == '':
+                    cleaned_row.append(0.0)
+                else:
+                    cleaned_row.append(val)
+            values.append(cleaned_row)
 
         rows_inserted = 0
+        error_executemany = ""
         try:
             # Prepare the INSERT statement
             if metric_type == 'cost':
@@ -83,16 +110,17 @@ class db:
             elif metric_type == 'resource':
                 query = f"INSERT INTO {table_name} ({column_names}) VALUES ({marks_str}) ON CONFLICT ({RESOURCE_PRIMARY_KEYS}) DO UPDATE SET average = excluded.average"
 
-            # Execute insert
+            # Debug log
             self.app.logger.debug('\n\n' + query + '\n\n')
+
+            # Execute bulk insert
             result = cursor.executemany(query, values)
-            error_executemany = ''
             for dictionary in result:
                 if 'rowcount' in dictionary.keys() and dictionary['rowcount'] != -2:
                     rows_inserted += dictionary['rowcount']
                 elif 'error_message' in dictionary.keys():
                     self.app.logger.error(dictionary['error_message'])
-                    if error_executemany != '':
+                    if error_executemany == '':
                         error_executemany = dictionary['error_message']
         except Exception as e:
             self.app.logger.error(f"Bulk insert failed: {str(e)}")
