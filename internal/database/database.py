@@ -148,9 +148,14 @@ class db:
         self.get_db_connection(username, password)
         cursor = self.connection.cursor()
 
-        cursor.execute(f"DELETE FROM {table_name} WHERE NOTEBOOK_NAME = '{notebook_name}'")
+        try:
+            cursor.execute(f"DELETE FROM {table_name} WHERE NOTEBOOK_NAME = '{notebook_name}'")
+        except Exception as e:
+            self.app.logger.error(f"Could not delete notebook {notebook_name}: {str(e)}")
+            return False
 
         cursor.close()
+        self.app.logger.debug(f"Deleted notebook {notebook_name}")
         return True
     
     def get_notebook(self, table_name : str, notebook : str, username : str, password : str) -> str:
@@ -164,8 +169,13 @@ class db:
             return ''
 
         records = cursor.fetchall()
-        self.app.logger.debug(records[0][0])
-        return records[0][0]
+        self.app.logger.debug(records)
+        try:
+            return_value = records[0][0]
+        except Exception as e:
+            self.app.logger.error('could not fetch notebook code: index does not exist')
+            return_value = ''
+        return return_value
 
     def list_notebooks(self, table_name : str, username : str, password : str) -> str:
         self.get_db_connection(username, password)

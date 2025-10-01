@@ -133,8 +133,11 @@ def compute(path : str):
         parts = path.split('/')           
         if len(parts) == 2:
             if parts[1] == 'info':
-                # return algorithm info for parts[0]
-                return jsonify({'notebook': parts[0], 'code': compute_notebook.get_notebook(db, parts[0], username, password)}), 200
+                result = compute_notebook.get_notebook(db, parts[0], username, password)
+                if result == '':
+                    return jsonify({'notebook': parts[0], 'code': ''}), 404
+                else:
+                    return jsonify({'notebook': parts[0], 'code': result}), 200
             else:
                 return jsonify({'error': url_IncorrectError}), 400
         else:
@@ -164,7 +167,11 @@ def compute(path : str):
                 return jsonify({'result': compute_notebook.upload(db, parts[0], notebook, overwrite, username, password)}), 200
             
     elif request.method == 'DELETE':
-        return jsonify({'result': compute_notebook.delete(db, path, username, password)}), 200
+        parts = path.split('/')
+        if len(parts) == 1:
+            res = compute_notebook.delete(db, parts[0], username, password)
+            app.logger.debug(f"Delete notebook request for notebook {parts[0]} had result {200 if res else 500}")
+            return jsonify({'result': 'deleted' if res else 'error'}), 200 if res else 500
         
     return jsonify({'error': url_Method_IncorrectError}), 405
 
