@@ -9,7 +9,7 @@ import traceback
 
 from flask import Flask, request, jsonify, Response
 from waitress import serve
-from internal.database.helpers import get_focus_create, get_resource_create, format_tags_for_db
+from internal.database.helpers import get_focus_create, get_resource_create, get_generic_create, format_tags_for_db
 
 """ Error strings for the webservice """
 url_IncorrectError = 'URL composition incorrect'
@@ -79,6 +79,8 @@ def upload_data():
                 db.create_table(table_name, username, password, get_focus_create)
             elif metric_type == 'resource':
                 db.create_table(table_name, username, password, get_resource_create)
+            elif metric_type == 'generic':
+                db.create_table(table_name, username, password, get_generic_create)
         # Process the bulk insert
 
         if metric_type == 'cost':

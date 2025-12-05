@@ -67,9 +67,6 @@ class db:
             return 0, ""
         # Get columns from the first record
         columns = list(data[0]['labels'].keys())
-        column_names = ','.join(columns)
-        marks_str = ','.join(['?' for _ in columns])
-        values = []
 
             # Define numeric columns that shouldn't get ''
         if metric_type == 'cost':
@@ -88,12 +85,25 @@ class db:
             numeric_columns = {
                 "average"
             }
+        elif metric_type == 'generic':
+            numeric_columns = {
+                "Value"
+            }
+            if 'value' not in columns:
+                columns.append('value')
+        
+        column_names = ','.join(columns)
+        marks_str = ','.join(['?' for _ in columns])
+        values = []
 
         for row in data:
             record = row["labels"]
             cleaned_row = []
             for column in columns:
-                val = record[column]
+                if column == 'value' and metric_type == 'generic':
+                    val = float(row["value"])
+                else:
+                    val = record[column]
                 # Replace empty string with 0.0 if this column is numeric
                 if column in numeric_columns and val == '':
                     cleaned_row.append(0.0)
@@ -109,6 +119,8 @@ class db:
                 query = f"INSERT INTO {table_name} ({column_names}) VALUES ({marks_str}) ON CONFLICT ({FOCUS_PRIMARY_KEYS}) DO UPDATE SET BilledCost = excluded.BilledCost"
             elif metric_type == 'resource':
                 query = f"INSERT INTO {table_name} ({column_names}) VALUES ({marks_str}) ON CONFLICT ({RESOURCE_PRIMARY_KEYS}) DO UPDATE SET average = excluded.average"
+            elif metric_type == 'generic':
+                query = f"INSERT INTO {table_name} ({column_names}) VALUES ({marks_str})"
 
             # Debug log
             self.app.logger.debug('\n\n' + query + '\n\n')
