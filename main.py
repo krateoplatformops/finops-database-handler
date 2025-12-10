@@ -1,38 +1,71 @@
+from gevent import monkey
+monkey.patch_all()  # Must come first
+
 import logging
 import os
 import time
-
-import internal.database.database as cratedb
-import internal.compute.compute as compute_notebook
-
 import traceback
 
 from flask import Flask, request, jsonify, Response
-from waitress import serve
-from internal.database.helpers import get_focus_create, get_resource_create, get_generic_create, format_tags_for_db
 
-""" Error strings for the webservice """
+import internal.database.database as cratedb
+import internal.compute.compute as compute_notebook
+from internal.database.helpers import (
+    get_focus_create,
+    get_resource_create,
+    get_generic_create,
+    format_tags_for_db,
+)
+
+app = Flask(__name__)
+
+log_level = os.getenv('LOG_LEVEL')
+if log_level == '':
+    log_level_value = logging.INFO
+elif log_level == 'debug':
+    log_level_value = logging.DEBUG
+elif log_level == 'info':
+    log_level_value = logging.INFO
+elif log_level == 'warning':
+    log_level_value = logging.WARN
+elif log_level == 'error':
+    log_level_value = logging.ERROR
+else:
+    log_level_value = logging.INFO
+
+logging.basicConfig(
+    level=log_level_value,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    handlers=[logging.StreamHandler()]
+)
+
+db = cratedb.db(app)
+
 url_IncorrectError = 'URL composition incorrect'
 url_Method_IncorrectError = 'URL composition or methods are incorrect'
 
-""" Service initialization """
-app = Flask(__name__)
-# CrateDB interface object
-db = cratedb.db(app)
-
 @app.before_request
 def log_request():
-    # Log basic info about the incoming request
-    app.logger.debug(
+    headers = dict(request.headers)
+    headers["Authorization"] = "<removed if present>"
+    app.logger.info(
         f"Incoming Request: \n{request.method} {request.url} \n"
-        f"Headers: {dict(request.headers)} \n"
+        f"Headers: {headers} \n"
         f"Body: {request.get_data(as_text=True)} \n"
     )
 
 @app.after_request
 def log_response(response):
-    # Optionally, log details about the outgoing response
-    app.logger.debug(f"Response: {response.status} for {request.method} {request.url}")
+    response_body = response.get_data(as_text=True)
+    max_len = 200
+    if len(response_body) > max_len and log_level != 'debug':
+        truncated_body = response_body[:max_len] + "..."
+    else:
+        truncated_body = response_body
+    app.logger.info(
+        f"Response: {response.status} for {request.method} {request.url}\n"
+        f"Body: {truncated_body}"
+    )
     return response
 
 @app.route('/upload', methods=['POST'])
@@ -152,7 +185,7 @@ def compute(path : str):
         if len(parts) == 1:
             parameters = request.get_json()
             result = compute_notebook.run(db, path, username, password, parameters, engine='cratedb')
-            app.logger.info('notebook call to ' + path + ' has result: ' + result)
+            app.logger.debug('notebook call to ' + path + ' has result: ' + result)
             if request.headers.get('Accept') == 'application/json':
                 return Response(result, mimetype='application/json')
             else:
@@ -183,11 +216,3 @@ def handle_error(error):
     """Global error handler"""
     app.logger.error(f"An error occurred: {str(error)}\n{traceback.format_exc()}")
     return jsonify({'error': str(error)}), 500
-
-if __name__ == '__main__':
-    # Configure logging
-    logging.basicConfig(level=logging.DEBUG)
-    
-    # Start the server using Waitress
-    app.logger.info("Starting server on port 8088...")
-    serve(app, host='0.0.0.0', port=int(os.getenv('PORT_DB_WEBSERVICE', '8088')))
