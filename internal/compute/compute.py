@@ -35,7 +35,7 @@ def run(db : cratedb.db, notebook : str, username : str, password : str, paramet
     for key in parameters:
         cmd.append(key+'='+parameters[key])
 
-    result = subprocess.run(cmd, capture_output=True, text = True)
+    result = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
     if result.returncode != 0:
         return result.stderr.strip('\n')
     return result.stdout.strip('\n')
