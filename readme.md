@@ -1,7 +1,7 @@
 # Krateo Composable FinOps Database Handler
 This service offers a set of endpoints to connect to the Krateo's CrateDB instance and use notebooks to compute data starting from SQL queries.
 
-This service requires [CrateDB](https://github.com/crate/) to be installed in the Kubernetes cluster. The CrateDB Kubernetes operator is recommended.
+This service requires [CrateDB](https://github.com/crate/) to be installed in the Kubernetes cluster.
 
 ## Summary
 
